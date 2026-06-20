@@ -40,6 +40,8 @@ const ExcelTools = {
       } else {
         sheet = ctx.workbook.worksheets.getActiveWorksheet();
       }
+      // Cargar nombre de la hoja
+      sheet.load('name');
       const rng = sheet.getRange(args?.range || 'A1:XFD1048576');
       rng.load('address, values, rowCount, columnCount');
       await ctx.sync();
