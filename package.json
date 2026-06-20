@@ -1,0 +1,13 @@
+{
+  "name": "ayla-add-exc",
+  "version": "1.0.0",
+  "description": "Ayla Add-Exc – Asistente IA para Excel con chat inteligente",
+  "scripts": {
+    "start": "node server.js",
+    "icons": "python3 generate-icons.py"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "selfsigned": "^2.4.1"
+  }
+}

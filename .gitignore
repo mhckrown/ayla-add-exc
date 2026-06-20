@@ -1,0 +1,9 @@
+node_modules/
+.cert/
+server.js
+generate-icons.py
+*.ps1
+*.bat
+install-node*
+check-*
+sideload.ps1
