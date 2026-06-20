@@ -7,3 +7,4 @@ generate-icons.py
 install-node*
 check-*
 sideload.ps1
+.git-askpass.sh
