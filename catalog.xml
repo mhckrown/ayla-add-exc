@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OfficeAppCatalog xmlns="http://schemas.microsoft.com/office/2016/officeappcatalog">
+  <OfficeApp>
+    <Id>a7e9f2c4-8d1b-4a3e-9c6f-2b5d8e1a7c3f</Id>
+    <ManifestUrl>https://raw.githubusercontent.com/mhckrown/ayla-add-exc/main/manifest.xml</ManifestUrl>
+  </OfficeApp>
+</OfficeAppCatalog>
