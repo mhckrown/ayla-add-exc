@@ -215,27 +215,34 @@ async function sendMessage() {
   // Add user message
   addMessage('user', text);
 
-  // Build context string
-  let contextStr = '';
-  if (currentContext && currentContext.data) {
-    const d = currentContext.data;
-    if (d.address) contextStr += `\n[Rango seleccionado: ${d.address}]\n`;
-    if (d.values) {
-      const preview = d.values.slice(0, 20).map(r =>
-        r.map(v => v === null || v === undefined ? '' : String(v).slice(0, 50)).join('\t')
-      ).join('\n');
-      contextStr += `\`\`\`\n${preview}\n\`\`\`\n`;
-      if (d.values.length > 20) contextStr += `... y ${d.values.length - 20} filas más\n`;
+  // AUTO-CONTEXT: Obtener info de la hoja activa automaticamente
+  let autoContext = '';
+  try {
+    const activeSheet = await ExcelTools.get_active_worksheet();
+    autoContext = `\n[Hoja activa: ${activeSheet.name}]\n`;
+    // Obtener tambien el rango seleccionado si existe
+    try {
+      const selectedRange = await ExcelTools.get_selected_range({});
+      if (selectedRange && selectedRange.address) {
+        autoContext += `[Rango seleccionado: ${selectedRange.address} (${selectedRange.rows}x${selectedRange.cols})]\n`;
+        if (selectedRange.values && selectedRange.values.length > 0) {
+          const preview = selectedRange.values.slice(0, 15).map(r =>
+            r.map(v => v === null || v === undefined ? '' : String(v).slice(0, 50)).join('\t')
+          ).join('\n');
+          autoContext += `\`\`\`\n${preview}\n\`\`\`\n`;
+          if (selectedRange.values.length > 15) autoContext += `... y ${selectedRange.values.length - 15} filas más\n`;
+        }
+      }
+    } catch (e) {
+      // No hay seleccion activa, no es un error
     }
-    if (d.sheets) {
-      contextStr += `\nHojas: ${d.sheets.map(s => s.name).join(', ')}\n`;
-    }
-    if (d.sheet) contextStr += `\nHoja activa: ${d.sheet}\n`;
+  } catch (e) {
+    // No se pudo obtener contexto, continuar sin el
   }
 
   // Build user message for API
-  const userMsgContent = contextStr
-    ? `Contexto de Excel:\n${contextStr}\n\nInstrucción del usuario: ${text}`
+  const userMsgContent = autoContext
+    ? `Contexto de Excel:\n${autoContext}\n\nInstrucción del usuario: ${text}`
     : text;
 
   messages.push({ role: 'user', content: userMsgContent });
