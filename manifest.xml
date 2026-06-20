@@ -1,50 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-           xsi:type="TaskPaneApp">
+<OfficeApp 
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" 
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xsi:type="TaskPaneApp">
+  
   <Id>a7e9f2c4-8d1b-4a3e-9c6f-2b5d8e1a7c3f</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>Ayla</ProviderName>
-  <DefaultLocale>es-ES</DefaultLocale>
-  <DisplayName DefaultValue="Ayla Add-Exc"/>
-  <Description DefaultValue="Asistente inteligente para Excel. Chat, automatización, análisis y formato mediante IA."/>
-  <IconUrl DefaultValue="https://mhckrown.github.io/ayla-add-exc/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://mhckrown.github.io/ayla-add-exc/assets/icon-128.png"/>
-  <SupportUrl DefaultValue="https://github.com/mhckrown/ayla-add-exc"/>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="Ayla Add-Exc" />
+  <Description DefaultValue="Ayla Add-Exc - Asistente de IA para Excel"/>
+  <IconUrl DefaultValue="https://mhckrown.github.io/ayla-add-exc/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://mhckrown.github.io/ayla-add-exc/assets/icon-128.png" />
+  <SupportUrl DefaultValue="https://github.com/mhckrown/ayla-add-exc" />
+
   <AppDomains>
     <AppDomain>https://generativelanguage.googleapis.com</AppDomain>
   </AppDomains>
+
   <Hosts>
-    <Host Name="Workbook"/>
+    <Host Name="Workbook" />
   </Hosts>
+
   <Requirements>
     <Sets DefaultMinVersion="1.1">
-      <Set Name="ExcelApi" MinVersion="1.1"/>
+      <Set Name="SharedRuntime" MinVersion="1.1"/>
     </Sets>
   </Requirements>
+
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://mhckrown.github.io/ayla-add-exc/src/taskpane.html"/>
+    <SourceLocation DefaultValue="https://mhckrown.github.io/ayla-add-exc/src/taskpane.html" />
   </DefaultSettings>
+
   <Permissions>ReadWriteDocument</Permissions>
+
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Hosts>
       <Host xsi:type="Workbook">
+        <Runtimes>
+          <Runtime resid="Taskpane.Url" lifetime="long" />
+        </Runtimes>
         <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Taskpane.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <CustomTab id="Ayla.Tab">
-              <Group id="Ayla.Group">
-                <Label resid="Group.Label"/>
+            <OfficeTab id="TabHome">
+              <Group id="AylaGroup">
+                <Label resid="Group.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16x16"/>
                   <bt:Image size="32" resid="Icon.32x32"/>
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
-                <Control xsi:type="Button" id="Ayla.OpenChat">
-                  <Label resid="ChatButton.Label"/>
+                <Control xsi:type="Button" id="AylaTaskpaneButton">
+                  <Label resid="TaskpaneButton.Label" />
                   <Supertip>
-                    <Title resid="ChatButton.Title"/>
-                    <Description resid="ChatButton.Description"/>
+                    <Title resid="TaskpaneButton.Label" />
+                    <Description resid="TaskpaneButton.Tooltip" />
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -52,17 +69,17 @@
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>AylaChat</TaskpaneId>
+                    <TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
               </Group>
-              <Label resid="Tab.Label"/>
-            </CustomTab>
+            </OfficeTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
     </Hosts>
+
     <Resources>
       <bt:Images>
         <bt:Image id="Icon.16x16" DefaultValue="https://mhckrown.github.io/ayla-add-exc/assets/icon-16.png"/>
@@ -71,15 +88,18 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://mhckrown.github.io/ayla-add-exc/src/taskpane.html"/>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/mhckrown/ayla-add-exc"/>
       </bt:Urls>
       <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Ayla Add-Exc"/>
         <bt:String id="Group.Label" DefaultValue="Ayla Add-Exc"/>
-        <bt:String id="ChatButton.Label" DefaultValue="Abrir Chat"/>
-        <bt:String id="ChatButton.Title" DefaultValue="Abrir Chat de IA"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Abrir Chat"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="ChatButton.Description" DefaultValue="Abre el panel de chat con IA en Excel."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Ayla Add-Exc - Asistente de IA para Excel"/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Abre el chat de IA en Excel"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
+
 </OfficeApp>
