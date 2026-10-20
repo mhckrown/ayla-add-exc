@@ -125,6 +125,7 @@ Office guarda en caché el panel. Si no ves la versión nueva, cierra Excel y bo
 1. Inicia FreeLLMAPI en tu equipo (por defecto `http://localhost:3001`; la app de escritorio usa `31415`) y añade tus claves de proveedores en su dashboard.
 2. Copia la **clave unificada** desde la página *Keys* del dashboard.
 3. Como el panel se sirve desde `https://mhckrown.github.io`, el navegador de Excel necesita permiso CORS. Elige **una** opción:
+   - **Windows, un clic:** descarga [`iniciar-ayla-freellmapi.bat`](https://raw.githubusercontent.com/mhckrown/ayla-add-exc/main/iniciar-ayla-freellmapi.bat) (clic derecho → *Guardar como*) y ábrelo. Instala Node.js si hace falta, descarga el puente y lo deja corriendo. Endpoint: `http://127.0.0.1:3939/v1`.
    - **Puente local (sin tocar FreeLLMAPI):** en este repo ejecuta `npm run freellmapi` y usa el endpoint `http://localhost:3939/v1`.
    - **Directo:** añade `DASHBOARD_ORIGINS=https://mhckrown.github.io` al `.env` de FreeLLMAPI, reinícialo y usa `http://localhost:3001/v1`.
 4. En Ayla pulsa el preset **🆓 FreeLLMAPI (local)**, pega la clave unificada y deja el modelo en `auto` (o `auto:smartest` / `auto:fastest`).
