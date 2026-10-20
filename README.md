@@ -159,6 +159,25 @@ En un entorno corporativo:
 2. Haz clic en **⚙️ Configuración**
 3. Elige tu proveedor:
 
+#### 🆓 FreeLLMAPI (local, en tu equipo — recomendado)
+
+[FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) agrupa muchos proveedores gratuitos detrás de un único endpoint compatible con OpenAI (con streaming y tool calling).
+
+1. Inicia FreeLLMAPI en tu equipo (por defecto `http://localhost:3001`; la app de escritorio usa `31415`) y añade tus claves de proveedores en su dashboard.
+2. Copia la **clave unificada** desde la página *Keys* del dashboard.
+3. Como el panel se sirve desde `https://mhckrown.github.io`, el navegador de Excel necesita permiso CORS. Elige **una** opción:
+   - **Puente local (sin tocar FreeLLMAPI):** en este repo ejecuta `npm run freellmapi` y usa el endpoint `http://localhost:3939/v1`.
+   - **Directo:** añade `DASHBOARD_ORIGINS=https://mhckrown.github.io` al `.env` de FreeLLMAPI, reinícialo y usa `http://localhost:3001/v1`.
+4. En Ayla pulsa el preset **🆓 FreeLLMAPI (local)**, pega la clave unificada y deja el modelo en `auto` (o `auto:smartest` / `auto:fastest`).
+
+| Campo | Valor |
+|---|---|
+| Endpoint | `http://localhost:3939/v1` (puente) o `http://localhost:3001/v1` (directo) |
+| Modelo | `auto` |
+| API Key | Clave unificada de FreeLLMAPI |
+
+Variables del puente: `FREELLMAPI_URL` (destino, por defecto detecta `127.0.0.1:3001` y `:31415`), `PROXY_PORT` (por defecto `3939`), `ALLOWED_ORIGINS` (orígenes permitidos, separados por coma).
+
 #### ✨ Gemini Flash (gratis — recomendado)
 
 | Campo | Valor |

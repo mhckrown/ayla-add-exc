@@ -4,6 +4,8 @@
   "description": "Ayla Add-Exc – Asistente IA para Excel con chat inteligente",
   "scripts": {
     "start": "node server.js",
+    "dev": "node dev/server.js",
+    "freellmapi": "node tools/freellmapi-proxy.js",
     "icons": "python3 generate-icons.py"
   },
   "dependencies": {
