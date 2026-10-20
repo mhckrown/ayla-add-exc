@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ayla — Simulador de Excel</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 12px 'Segoe UI', sans-serif; display: flex; height: 100vh; background: #f3f3f3; }
+    #excel { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #bar { display: flex; gap: 8px; align-items: center; padding: 6px 8px; background: #217346; color: #fff; }
+    #bar b { font-size: 13px; }
+    #formula { flex: 0 0 auto; display: flex; gap: 6px; padding: 4px 8px; background: #fff; border-bottom: 1px solid #ccc; }
+    #formula span { min-width: 60px; color: #555; }
+    #grid-wrap { flex: 1; overflow: auto; background: #fff; }
+    table { border-collapse: collapse; table-layout: fixed; }
+    td, th { border: 1px solid #e1e1e1; height: 20px; min-width: 72px; max-width: 160px; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    th { background: #f0f0f0; color: #555; font-weight: 400; position: sticky; top: 0; z-index: 1; }
+    td.rh { background: #f0f0f0; color: #555; text-align: center; min-width: 36px; position: sticky; left: 0; }
+    td.sel { outline: 2px solid #217346; outline-offset: -2px; background: #e8f3ec; }
+    td.num { text-align: right; }
+    td.err { color: #c00; }
+    td.flash { animation: flash 1.2s; }
+    @keyframes flash { from { background: #fff3a0; } to { background: transparent; } }
+    #tabs { display: flex; gap: 2px; padding: 0 8px; background: #e6e6e6; border-top: 1px solid #ccc; }
+    #tabs button { border: none; padding: 5px 12px; background: transparent; cursor: pointer; }
+    #tabs button.active { background: #fff; color: #217346; font-weight: 600; border-bottom: 2px solid #217346; }
+    #log { max-height: 70px; overflow: auto; font: 11px monospace; background: #fafafa; border-top: 1px solid #ddd; padding: 2px 8px; color: #666; }
+    iframe { width: 380px; border: none; border-left: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div id="excel">
+    <div id="bar"><b>Excel (simulado)</b><span id="wbname"></span></div>
+    <div id="formula"><span id="addr"></span><input id="fx" style="flex:1;border:1px solid #ccc;padding:2px 4px" placeholder="Escribe un valor o fórmula y pulsa Enter"></div>
+    <div id="grid-wrap"><table id="grid"></table></div>
+    <div id="tabs"></div>
+    <div id="log"></div>
+  </div>
+  <iframe id="pane" src="/src/taskpane.html?mock=1"></iframe>
+  <script src="mock-excel.js"></script>
+  <script src="grid.js"></script>
+</body>
+</html>

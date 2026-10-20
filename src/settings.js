@@ -1,42 +1,59 @@
-/* === Ayla Add-Exc — Settings Manager === */
+/* === Ayla Add-Exc — Configuración === */
 
-const SETTINGS = {
-  endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-  model: 'gemini-2.5-flash',
-  apiKey: '',
-  systemPrompt: `Eres un asistente experto en Excel. Tu función es ayudar al usuario a trabajar con sus hojas de cálculo.
+const BASE_SYSTEM_PROMPT = `Eres Ayla, un asistente de IA integrado en Microsoft Excel. Trabajas directamente sobre el libro abierto del usuario mediante herramientas.
 
-REGLAS DE ORO:
-1. Cuando el usuario pida analizar, calcular, modificar o consultar datos, SIEMPRE llama primero a las herramientas de lectura de Excel (get_selected_range, get_worksheet_data, get_worksheet_names) para obtener la información actual. No respondas basándote en suposiciones.
-2. Después de leer los datos, analízalos y ejecuta las herramientas que necesites.
-3. Explica SIEMPRE qué estás haciendo y el resultado obtenido.
+CÓMO TRABAJAS
+- Cada mensaje del usuario llega con un bloque <contexto_excel> que resume el libro (hojas, rangos usados, encabezados, tablas) y la selección actual. Úsalo para orientarte; para ver datos concretos llama a read_range u otras herramientas. Nunca inventes valores ni digas que no tienes acceso a la hoja.
+- Si el usuario dice "esto", "aquí" o "estos datos", se refiere a la selección actual.
+- Para explicar o auditar una fórmula usa get_cell_dependencies (sigue la cadena de precedentes si hace falta). Para depurar errores (#REF!, #DIV/0!, #N/A…) usa find_errors y luego analiza las causas.
+- Al construir o modificar modelos, prefiere fórmulas en lugar de valores fijos para que el libro siga recalculando. Conserva la estructura y el formato existentes.
+- Las fórmulas que escribas deben ir en inglés y con coma como separador (SUM, AVERAGE, IF, VLOOKUP, XLOOKUP…): Excel las mostrará en el idioma del usuario.
+- No sobrescribas datos existentes sin necesidad; si tienes que hacerlo, dilo. Las acciones destructivas piden confirmación al usuario automáticamente.
 
-FLUJO DE TRABAJO TÍPICO:
-- Usuario: "analiza estos datos" → Tú: get_selected_range() → analizas → respondes
-- Usuario: "calcula el promedio de ventas" → Tú: get_worksheet_data() → calculas → set_cell_value() → respondes
-- Usuario: "crea un gráfico" → Tú: get_worksheet_data() → create_chart() → respondes
-- Usuario: "dame información de la hoja" → Tú: get_worksheet_names() + get_active_worksheet() → respondes
+CÓMO RESPONDES
+- Cita SIEMPRE las celdas en las que te basas o que modificaste usando referencias de Excel, por ejemplo B5, C2:C20, Ventas!D10 o 'Flujo de caja'!B3. Se convierten en enlaces que llevan al usuario a esa celda.
+- Al terminar cambios, resume brevemente qué hiciste y dónde.
+- Sé claro y conciso. Responde en el idioma del usuario (español por defecto). Usa Markdown (listas, tablas cortas) cuando ayude.`;
 
-NUNCA digas "no tengo acceso a tus datos" o "no puedo ver tu hoja". SIMPLEMENTE USA LAS HERRAMIENTAS para leer los datos.
-
-IMPORTANTE:
-- Siempre responde en español.
-- Se claro, conciso y profesional.
-- Si el usuario no especifica un rango, usa get_worksheet_data sin parámetros para leer la hoja activa completa.
-- Después de escribir datos o fórmulas, explica qué pusiste y por qué.`,
+const PRESETS = {
+  freellmapi: { endpoint: 'http://localhost:3001/v1', model: 'auto', provider: 'openai' },
+  claude: { endpoint: 'https://api.anthropic.com/v1', model: 'claude-sonnet-4-5', provider: 'anthropic' },
+  gemini: { endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/', model: 'gemini-2.5-flash', provider: 'openai' },
+  openai: { endpoint: 'https://api.openai.com/v1', model: 'gpt-4o-mini', provider: 'openai' },
+  openrouter: { endpoint: 'https://openrouter.ai/api/v1', model: 'anthropic/claude-sonnet-4.5', provider: 'openai' },
 };
 
-/* --- persistence --- */
+const SETTINGS = {
+  endpoint: PRESETS.freellmapi.endpoint,
+  model: PRESETS.freellmapi.model,
+  provider: 'openai',
+  apiKey: '',
+  systemPrompt: '',
+  confirmDestructive: true,
+};
+
+function getSystemPrompt() {
+  const extra = (SETTINGS.systemPrompt || '').trim();
+  return extra ? `${BASE_SYSTEM_PROMPT}\n\nINSTRUCCIONES ADICIONALES DEL USUARIO\n${extra}` : BASE_SYSTEM_PROMPT;
+}
+
+/* --- persistencia --- */
+
+function readSettingsForm() {
+  return {
+    endpoint: document.getElementById('endpoint-url').value.trim(),
+    model: document.getElementById('model-name').value.trim(),
+    provider: document.getElementById('provider').value,
+    apiKey: document.getElementById('api-key').value.trim(),
+    systemPrompt: document.getElementById('system-prompt').value.trim(),
+    confirmDestructive: document.getElementById('confirm-destructive').checked,
+  };
+}
+
 function saveSettings() {
   try {
-    const data = {
-      endpoint: document.getElementById('endpoint-url').value.trim(),
-      model: document.getElementById('model-name').value.trim(),
-      apiKey: document.getElementById('api-key').value.trim(),
-      systemPrompt: document.getElementById('system-prompt').value.trim(),
-    };
+    const data = readSettingsForm();
     localStorage.setItem('ayla_settings', JSON.stringify(data));
-    // Office roaming settings (portable entre equipos si usan la misma cuenta)
     if (typeof Office !== 'undefined' && Office.context && Office.context.roamingSettings) {
       Office.context.roamingSettings.set('ayla_settings', JSON.stringify(data));
       Office.context.roamingSettings.saveAsync();
@@ -45,114 +62,89 @@ function saveSettings() {
     updateConnectionBar();
     return true;
   } catch (e) {
-    console.error('Error saving settings:', e);
+    console.error('Error guardando configuración:', e);
     return false;
   }
 }
 
 function loadSettings() {
   try {
-    // Try localStorage first, then roaming settings
     let raw = localStorage.getItem('ayla_settings');
     if (!raw && typeof Office !== 'undefined' && Office.context && Office.context.roamingSettings) {
       raw = Office.context.roamingSettings.get('ayla_settings');
     }
     if (raw) {
       const data = JSON.parse(raw);
+      // v1 guardaba el prompt base completo; ahora solo se guardan instrucciones adicionales.
+      if (data.systemPrompt && data.systemPrompt.startsWith('Eres un asistente experto en Excel. Tu función')) {
+        data.systemPrompt = '';
+      }
       Object.assign(SETTINGS, data);
     }
   } catch (e) {
-    console.warn('Could not load settings:', e);
+    console.warn('No se pudo cargar la configuración:', e);
   }
 }
 
 function applySettingsToUI() {
   document.getElementById('endpoint-url').value = SETTINGS.endpoint || '';
   document.getElementById('model-name').value = SETTINGS.model || '';
+  document.getElementById('provider').value = SETTINGS.provider || 'auto';
   document.getElementById('api-key').value = SETTINGS.apiKey || '';
   document.getElementById('system-prompt').value = SETTINGS.systemPrompt || '';
-}
-
-function getEndpointUrl() {
-  let url = SETTINGS.endpoint || '';
-  url = url.replace(/\/+$/, ''); // trailing slash
-  // Ensure it ends with /chat/completions
-  if (!url.endsWith('/chat/completions')) {
-    url += '/chat/completions';
-  }
-  return url;
+  document.getElementById('confirm-destructive').checked = SETTINGS.confirmDestructive !== false;
 }
 
 function updateConnectionBar() {
   const bar = document.getElementById('connection-bar');
-  const dot = bar.querySelector('.status-dot');
   const text = bar.querySelector('.status-text');
   if (SETTINGS.apiKey && SETTINGS.endpoint) {
+    const provider = LLM.isFreeLLMAPI(SETTINGS.endpoint) ? 'FreeLLMAPI'
+      : LLM.detectProvider(SETTINGS.endpoint, SETTINGS.provider) === 'anthropic' ? 'Claude' : 'OpenAI-compatible';
     bar.className = 'status-bar connected';
-    dot.style.background = 'var(--success)';
-    text.textContent = `Conectado → ${SETTINGS.model}`;
+    text.textContent = `${SETTINGS.model} · ${provider}`;
   } else {
     bar.className = 'status-bar disconnected';
-    dot.style.background = 'var(--danger)';
     text.textContent = 'Sin configurar — abre ⚙️';
   }
 }
 
 async function testConnection() {
   const result = document.getElementById('test-result');
-  result.className = 'test-result hidden';
-  result.textContent = '';
-
-  const endpoint = document.getElementById('endpoint-url').value.trim();
-  const model = document.getElementById('model-name').value.trim();
-  const key = document.getElementById('api-key').value.trim();
-
-  if (!endpoint || !model) {
+  const form = readSettingsForm();
+  if (!form.endpoint || !form.model || !form.apiKey) {
     result.className = 'test-result error';
-    result.textContent = '❌ Endpoint y modelo son requeridos.';
+    result.textContent = '❌ Endpoint, modelo y API key son requeridos.';
     return;
   }
-  if (!key) {
-    result.className = 'test-result error';
-    result.textContent = '❌ API Key requerida.';
-    return;
-  }
-
   result.className = 'test-result';
   result.textContent = '🔄 Probando conexión...';
-
   try {
-    let url = endpoint.replace(/\/+$/, '');
-    url += '/chat/completions';
-
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [{ role: 'user', content: 'Responde solo "ok" si me entiendes.' }],
-        max_tokens: 10,
-      }),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      result.className = 'test-result error';
-      result.textContent = `❌ Error ${resp.status}: ${resp.statusText}${errText ? ' — ' + errText.slice(0, 200) : ''}`;
-      return;
-    }
-
-    const data = await resp.json();
-    const reply = data.choices?.[0]?.message?.content || '(vacio)';
+    const { provider, reply, servedBy } = await LLM.ping(form);
+    const name = LLM.isFreeLLMAPI(form.endpoint) ? 'FreeLLMAPI' : provider === 'anthropic' ? 'Anthropic' : 'OpenAI-compatible';
     result.className = 'test-result success';
-    result.textContent = `✅ Conexión exitosa! Modelo respondió: "${reply.slice(0, 100)}"`;
+    result.textContent = `✅ Conexión exitosa (${name}${servedBy ? ' → ' + servedBy : ''}). Respuesta: "${String(reply).slice(0, 80)}"`;
+    loadModelList(form);
   } catch (err) {
     result.className = 'test-result error';
-    result.textContent = `❌ Error de conexión: ${err.message}`;
+    result.textContent = `❌ ${err.message}`;
   }
+}
+
+/** Rellena la lista de sugerencias del campo Modelo con GET /models (si el servidor lo permite). */
+async function loadModelList(form) {
+  try {
+    const models = await LLM.listModels(form || SETTINGS);
+    const list = document.getElementById('model-list');
+    if (!list || !models.length) return;
+    list.innerHTML = '';
+    const opts = LLM.isFreeLLMAPI((form || SETTINGS).endpoint) ? ['auto', 'auto:smartest', 'auto:fastest', ...models] : models;
+    [...new Set(opts)].slice(0, 300).forEach((id) => {
+      const o = document.createElement('option');
+      o.value = id;
+      list.appendChild(o);
+    });
+  } catch { /* opcional */ }
 }
 
 /* --- Init --- */
@@ -161,57 +153,45 @@ document.addEventListener('DOMContentLoaded', () => {
   applySettingsToUI();
   updateConnectionBar();
 
-  // Settings modal
-  const settingsBtn = document.getElementById('btn-settings');
   const settingsModal = document.getElementById('settings-modal');
-  const modalClose = settingsModal.querySelector('.modal-close');
-  const modalBackdrop = settingsModal.querySelector('.modal-backdrop');
 
   function openSettings() {
     applySettingsToUI();
     settingsModal.classList.remove('hidden');
   }
-
   function closeSettings() {
     settingsModal.classList.add('hidden');
     document.getElementById('test-result').className = 'test-result hidden';
   }
+  window.openSettings = openSettings;
 
-  settingsBtn.addEventListener('click', openSettings);
-  modalClose.addEventListener('click', closeSettings);
-  modalBackdrop.addEventListener('click', closeSettings);
+  document.getElementById('btn-settings').addEventListener('click', openSettings);
+  settingsModal.querySelector('.modal-close').addEventListener('click', closeSettings);
+  settingsModal.querySelector('.modal-backdrop').addEventListener('click', closeSettings);
 
-  // Config link in welcome
-  const configLink = document.getElementById('config-link');
-  if (configLink) configLink.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
-
-  // Toggle API key visibility
   document.getElementById('btn-toggle-key').addEventListener('click', () => {
     const input = document.getElementById('api-key');
     input.type = input.type === 'password' ? 'text' : 'password';
   });
 
-  // Save
   document.getElementById('btn-save-settings').addEventListener('click', () => {
     if (saveSettings()) {
       const result = document.getElementById('test-result');
       result.className = 'test-result success';
       result.textContent = '✅ Configuración guardada.';
-      setTimeout(closeSettings, 1000);
+      setTimeout(closeSettings, 800);
     }
   });
 
-  // Test
   document.getElementById('btn-test-connection').addEventListener('click', testConnection);
 
-  // Preset providers
-  document.querySelectorAll('.preset-btn').forEach(btn => {
+  document.querySelectorAll('.preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
-      const ep = btn.dataset.endpoint;
-      const model = btn.dataset.model;
-      if (ep === 'custom') return;
-      document.getElementById('endpoint-url').value = ep;
-      document.getElementById('model-name').value = model;
+      const preset = PRESETS[btn.dataset.preset];
+      if (!preset) return;
+      document.getElementById('endpoint-url').value = preset.endpoint;
+      document.getElementById('model-name').value = preset.model;
+      document.getElementById('provider').value = preset.provider;
     });
   });
 });

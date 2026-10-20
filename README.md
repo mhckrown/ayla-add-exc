@@ -78,86 +78,64 @@ Ejemplos de lo que puedes decir:
 | **Node.js** | 18+ (solo para el servidor) |
 | **Conexión a internet** | Solo para llamar a la API del modelo |
 
-### Paso 1: Preparar el servidor
+### Paso 1: Obtener el manifest
 
-El add-in necesita un servidor web que sirva los archivos. Opciones:
-
-#### Opción A: Servidor local con Node.js (recomendado para desarrollo)
-
-```powershell
-cd ayla-add-exc
-npm install
-node server.js
-```
-
-Esto inicia:
-- HTTP en `http://localhost:3000`
-- HTTPS en `https://localhost:3001`
-
-#### Opción B: Servidor IIS en Windows Server (para producción)
-
-1. Abre **Administrador de IIS**
-2. Crea un sitio web nuevo o aplicación
-3. Copia la carpeta `ayla-add-exc` al directorio del sitio
-4. Asegúrate de tener HTTPS configurado (certificado válido)
-5. Actualiza `manifest.xml` con tu URL pública
-
-#### Opción C: nginx en Linux
-
-```nginx
-server {
-    listen 443 ssl;
-    server_name ayla.midominio.com;
-    root /ruta/a/ayla-add-exc;
-    ssl_certificate /ruta/cert.pem;
-    ssl_certificate_key /ruta/key.pem;
-}
-```
+El panel ya está publicado en GitHub Pages (`https://mhckrown.github.io/ayla-add-exc/`, rama `main`), así que no necesitas servidor propio. Solo descarga [`manifest.xml`](https://raw.githubusercontent.com/mhckrown/ayla-add-exc/main/manifest.xml) (clic derecho → *Guardar como*).
 
 ### Paso 2: Instalar en Excel
 
-#### Método A: Instalador PowerShell (Windows)
+#### Windows (Excel de escritorio) — carpeta compartida de confianza
 
-```powershell
-# Asegúrate de que el servidor esté corriendo
-.\sideload.ps1 -ServerUrl "https://localhost:3001"
+1. Crea una carpeta, p. ej. `C:\AylaAddin`, y copia ahí `manifest.xml`.
+2. Clic derecho en la carpeta → **Propiedades → Compartir → Compartir…** → **Compartir**. Anota la ruta de red, p. ej. `\\MI-PC\AylaAddin`.
+3. En Excel: **Archivo → Opciones → Centro de confianza → Configuración del Centro de confianza → Catálogos de complementos de confianza**.
+4. En **Dirección URL del catálogo** pega `\\MI-PC\AylaAddin`, pulsa **Agregar catálogo**, marca **Mostrar en menú** y acepta.
+5. Cierra Excel por completo y vuelve a abrirlo.
+6. **Inicio → Complementos → Más complementos → CARPETA COMPARTIDA** (o **Insertar → Mis complementos**), elige **Ayla** y pulsa **Agregar**.
 
-# O apuntando a un servidor de producción:
-.\sideload.ps1 -ServerUrl "https://ayla.midominio.com"
-```
+> También puedes ejecutar `setup.bat`, que copia el manifest en `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef`.
 
-#### Método B: Sideload manual
+#### Mac
 
-1. Abre Excel
-2. Ve a **Insertar → Complementos → Mis complementos**
-3. Haz clic en **Administrar mis complementos → Cargar complemento**
-4. Navega hasta `manifest.xml` y selecciónalo
-5. Aparecerá la pestaña **Ayla Add-Exc** en la cinta
+1. Copia `manifest.xml` en `~/Library/Containers/com.microsoft.Excel/Data/Documents/wef/` (crea la carpeta `wef` si no existe).
+2. Reinicia Excel → **Insertar → Complementos → Mis complementos** → **Ayla**.
 
-#### Método C: Catálogo compartido (para múltiples equipos)
+#### Excel en la web
 
-En un entorno corporativo:
+**Inicio → Complementos → Más complementos → Cargar mi complemento** → selecciona `manifest.xml`.
 
-1. **Opción fácil**: Copia el manifest modificado a cada equipo en:
-   ```
-   %LOCALAPPDATA%\Microsoft\Office\16.0\Wef\
-   ```
-   (esto es lo que hace `sideload.ps1`)
+#### Actualizar después de un cambio
 
-2. **Opción centralizada**: Usa el Catálogo de SharePoint:
-   - Carga el add-in en la biblioteca de Catálogo de aplicaciones de SharePoint
-   - Los usuarios lo instalan desde **Insertar → Mis complementos → Compartidos conmigo**
+Office guarda en caché el panel. Si no ves la versión nueva, cierra Excel y borra el contenido de `%LOCALAPPDATA%\Microsoft\Office\16.0\Wef\` (Windows) o `~/Library/Containers/com.microsoft.Excel/Data/Library/Caches/` (Mac).
 
-3. **Opción GPO**: Distribuye el manifest via Política de Grupo:
-   ```
-   Computer Configuration\Administrative Templates\Microsoft Office 2016\Add-ins
-   ```
+#### Desarrollo sin Excel
+
+`npm run dev` abre un simulador de Excel en `http://localhost:3000/dev/` con el panel real y un Office.js simulado.
 
 ### Paso 3: Configurar la conexión al modelo
 
 1. En Excel, abre **Ayla Add-Exc → Abrir Chat**
 2. Haz clic en **⚙️ Configuración**
 3. Elige tu proveedor:
+
+#### 🆓 FreeLLMAPI (local, en tu equipo — recomendado)
+
+[FreeLLMAPI](https://github.com/tashfeenahmed/freellmapi) agrupa muchos proveedores gratuitos detrás de un único endpoint compatible con OpenAI (con streaming y tool calling).
+
+1. Inicia FreeLLMAPI en tu equipo (por defecto `http://localhost:3001`; la app de escritorio usa `31415`) y añade tus claves de proveedores en su dashboard.
+2. Copia la **clave unificada** desde la página *Keys* del dashboard.
+3. Como el panel se sirve desde `https://mhckrown.github.io`, el navegador de Excel necesita permiso CORS. Elige **una** opción:
+   - **Puente local (sin tocar FreeLLMAPI):** en este repo ejecuta `npm run freellmapi` y usa el endpoint `http://localhost:3939/v1`.
+   - **Directo:** añade `DASHBOARD_ORIGINS=https://mhckrown.github.io` al `.env` de FreeLLMAPI, reinícialo y usa `http://localhost:3001/v1`.
+4. En Ayla pulsa el preset **🆓 FreeLLMAPI (local)**, pega la clave unificada y deja el modelo en `auto` (o `auto:smartest` / `auto:fastest`).
+
+| Campo | Valor |
+|---|---|
+| Endpoint | `http://localhost:3939/v1` (puente) o `http://localhost:3001/v1` (directo) |
+| Modelo | `auto` |
+| API Key | Clave unificada de FreeLLMAPI |
+
+Variables del puente: `FREELLMAPI_URL` (destino, por defecto detecta `127.0.0.1:3001` y `:31415`), `PROXY_PORT` (por defecto `3939`), `ALLOWED_ORIGINS` (orígenes permitidos, separados por coma).
 
 #### ✨ Gemini Flash (gratis — recomendado)
 

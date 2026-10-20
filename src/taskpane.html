@@ -6,72 +6,63 @@
   <title>Ayla Add-Exc</title>
   <!-- Office.js (CDN obligatorio para add-ins) -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <!-- Dependencias locales (sin CDN — funcionan sin internet) -->
+  <!-- Dependencias locales -->
   <link rel="stylesheet" href="vendor/highlight.min.css">
   <link rel="stylesheet" href="taskpane.css">
 </head>
 <body>
   <div id="app">
-    <!-- Header -->
     <header id="header">
       <div class="logo">
         <span class="logo-icon">✦</span>
-        <span class="logo-text">Ayla Add-Exc</span>
+        <span class="logo-text">Ayla</span>
       </div>
       <div class="header-actions">
-        <button id="btn-clear" class="icon-btn" title="Limpiar conversación">🗑️</button>
+        <button id="btn-clear" class="icon-btn" title="Nueva conversación">+</button>
         <button id="btn-settings" class="icon-btn" title="Configuración">⚙️</button>
       </div>
     </header>
 
-    <!-- Connection status -->
     <div id="connection-bar" class="status-bar disconnected">
       <span class="status-dot"></span>
       <span class="status-text">Sin configurar — abre ⚙️</span>
     </div>
+    <div id="host-banner" class="host-banner hidden">Abre este panel desde Excel para trabajar con tus hojas.</div>
 
-    <!-- Messages -->
     <div id="messages" class="messages">
-      <div class="welcome">
+      <div class="welcome" id="welcome">
         <div class="welcome-icon">✦</div>
-        <h2>Bienvenido a Ayla Add-Exc</h2>
-        <p>Selecciona un rango de celdas y pregúntame qué hacer con los datos.</p>
-        <p class="welcome-hint">Ejemplos:</p>
-        <ul class="examples">
-          <li><code>"Calcula el promedio de este rango"</code></li>
-          <li><code>"Crea una tabla con formato"</code></li>
-          <li><code>"Haz un gráfico de barras"</code></li>
-          <li><code>"Aplica formato condicional"</code></li>
-          <li><code>"Ordena estos datos por columna B"</code></li>
-          <li><code>"Filtra filas donde ventas > 1000"</code></li>
-          <li><code>"Inserta una columna de totales"</code></li>
-        </ul>
-        <p class="welcome-config" id="welcome-config">⚠️ Antes de empezar, <a href="#" id="config-link">configura tu conexión</a> (⚙️).</p>
+        <h2>¿En qué trabajamos hoy?</h2>
+        <p>Ayla lee todo tu libro, explica fórmulas, encuentra errores y hace cambios por ti. Cada cambio queda registrado y se puede deshacer.</p>
+        <div class="suggestions">
+          <button class="suggestion">Explícame cómo está construido este libro</button>
+          <button class="suggestion">Analiza los datos seleccionados y dame conclusiones</button>
+          <button class="suggestion">Busca errores en las fórmulas y propón cómo arreglarlos</button>
+          <button class="suggestion">¿De dónde sale el valor de la celda seleccionada?</button>
+          <button class="suggestion">Crea una tabla con formato y un gráfico de estos datos</button>
+        </div>
+        <p class="welcome-config hidden" id="welcome-config">⚠️ Antes de empezar, <a href="#" id="config-link">configura tu conexión</a>.</p>
       </div>
     </div>
 
-    <!-- Input area -->
-    <div id="input-area" class="input-area">
-      <button id="btn-attach" class="attach-btn" title="Adjuntar contexto de Excel">📎</button>
-      <div id="attach-menu" class="attach-menu hidden">
-        <button class="attach-option" data-mode="selection">📌 Selección actual</button>
-        <button class="attach-option" data-mode="sheet">📄 Hoja activa</button>
-        <button class="attach-option" data-mode="none">❌ No adjuntar</button>
-      </div>
-      <div class="input-wrapper">
-        <textarea id="user-input" rows="1" placeholder="Escribe lo que quieres hacer en Excel..." maxlength="4000"></textarea>
-      </div>
-      <button id="btn-send" class="send-btn" disabled title="Enviar">→</button>
-    </div>
-
-    <!-- Context badge -->
     <div id="context-badge" class="context-badge hidden">
       <span id="context-label"></span>
-      <button id="btn-remove-context" class="icon-btn small">✕</button>
+      <button id="btn-remove-context" class="icon-btn small" title="Quitar">✕</button>
+    </div>
+
+    <div id="input-area" class="input-area">
+      <button id="btn-attach" class="attach-btn" title="Adjuntar datos completos">📎</button>
+      <div id="attach-menu" class="attach-menu hidden">
+        <button class="attach-option" data-mode="selection">📌 Selección actual completa</button>
+        <button class="attach-option" data-mode="sheet">📄 Hoja activa completa</button>
+      </div>
+      <div class="input-wrapper">
+        <textarea id="user-input" rows="1" placeholder="Pregunta o pide un cambio… (Enter para enviar)" maxlength="8000"></textarea>
+      </div>
+      <button id="btn-send" class="send-btn" disabled title="Enviar">↑</button>
     </div>
   </div>
 
-  <!-- Settings modal -->
   <div id="settings-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
     <div class="modal-content">
@@ -81,33 +72,46 @@
       </div>
       <div class="modal-body">
         <div class="form-group">
-          <label for="endpoint-url">Endpoint API</label>
-          <input type="url" id="endpoint-url" placeholder="https://generativelanguage.googleapis.com/v1beta/openai/">
-        </div>
-        <div class="form-group">
-          <label for="model-name">Modelo</label>
-          <input type="text" id="model-name" placeholder="gemini-2.5-flash">
-        </div>
-        <div class="form-group">
-          <label for="api-key">API Key</label>
-          <input type="password" id="api-key" placeholder="Tu API key">
-          <button id="btn-toggle-key" class="icon-btn small" title="Mostrar/ocultar">👁️</button>
-        </div>
-        <div class="form-group">
           <label>Proveedores predefinidos</label>
           <div class="preset-providers">
-            <button class="preset-btn" data-endpoint="https://generativelanguage.googleapis.com/v1beta/openai/" data-model="gemini-2.5-flash">✨ Gemini Flash (gratis)</button>
-            <button class="preset-btn" data-endpoint="https://api.openai.com/v1" data-model="gpt-4o-mini">🔵 OpenAI</button>
-            <button class="preset-btn" data-endpoint="https://openrouter.ai/api/v1" data-model="google/gemini-2.5-flash">🟠 OpenRouter</button>
-            <button class="preset-btn" data-endpoint="custom" data-model="">🔧 Personalizado</button>
+            <button class="preset-btn" data-preset="freellmapi">🆓 FreeLLMAPI (local)</button>
+            <button class="preset-btn" data-preset="claude">🟠 Claude (Anthropic)</button>
+            <button class="preset-btn" data-preset="gemini">✨ Gemini Flash (gratis)</button>
+            <button class="preset-btn" data-preset="openai">🔵 OpenAI</button>
+            <button class="preset-btn" data-preset="openrouter">🟣 OpenRouter</button>
           </div>
         </div>
         <div class="form-group">
-          <label for="system-prompt">Prompt del sistema (opcional)</label>
-          <textarea id="system-prompt" rows="3" placeholder="Eres un asistente experto en Excel..."></textarea>
+          <label for="endpoint-url">Endpoint API</label>
+          <input type="url" id="endpoint-url" placeholder="http://localhost:3001/v1">
+        </div>
+        <div class="form-group">
+          <label for="model-name">Modelo</label>
+          <input type="text" id="model-name" placeholder="auto" list="model-list">
+          <datalist id="model-list"><option value="auto"></option><option value="auto:smartest"></option><option value="auto:fastest"></option></datalist>
+        </div>
+        <div class="form-group">
+          <label for="provider">Formato de API</label>
+          <select id="provider">
+            <option value="auto">Automático (según endpoint)</option>
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="openai">OpenAI-compatible</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="api-key">API Key</label>
+          <input type="password" id="api-key" placeholder="Tu API key" autocomplete="off">
+          <button id="btn-toggle-key" class="icon-btn small" title="Mostrar/ocultar">👁️</button>
+        </div>
+        <div class="form-group">
+          <label for="system-prompt">Instrucciones adicionales (opcional)</label>
+          <textarea id="system-prompt" rows="3" placeholder="Ej: Usa formato de moneda MXN. Nuestro año fiscal empieza en abril."></textarea>
+        </div>
+        <div class="form-group checkbox">
+          <label><input type="checkbox" id="confirm-destructive" checked> Pedir confirmación antes de acciones destructivas</label>
         </div>
         <div class="form-actions">
-          <button id="btn-test-connection" class="btn btn-secondary">🔄 Probar conexión</button>
+          <button id="btn-test-connection" class="btn btn-secondary">🔄 Probar</button>
           <button id="btn-save-settings" class="btn btn-primary">💾 Guardar</button>
         </div>
         <div id="test-result" class="test-result hidden"></div>
@@ -115,10 +119,9 @@
     </div>
   </div>
 
-  <!-- Vendor JS (bundled) -->
   <script src="vendor/marked.min.js"></script>
   <script src="vendor/highlight.min.js"></script>
-  <!-- App JS -->
+  <script src="llm.js"></script>
   <script src="settings.js"></script>
   <script src="excel-bridge.js"></script>
   <script src="taskpane.js"></script>
