@@ -50,6 +50,13 @@ const LLM = (() => {
     } catch {
       if (body) msg += ` — ${body.slice(0, 200)}`;
     }
+    const hints = {
+      401: 'La API key no es válida o falta. Revísala en ⚙️ Configuración (en FreeLLMAPI usa la clave unificada de la página Keys).',
+      403: 'La API key no tiene permiso para este modelo o endpoint.',
+      404: 'Endpoint o modelo no encontrado. Revisa la URL (debe terminar en /v1) y el nombre del modelo.',
+      429: 'Límite de peticiones alcanzado o modelos en enfriamiento. Espera un momento y reintenta.',
+    };
+    if (hints[resp.status]) msg = `${hints[resp.status]} (${msg})`;
     const err = new Error(msg);
     err.status = resp.status;
     return err;
