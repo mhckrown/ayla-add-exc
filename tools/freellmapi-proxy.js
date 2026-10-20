@@ -70,6 +70,6 @@ http.createServer(async (req, res) => {
   req.pipe(proxyReq);
 }).listen(PORT, '127.0.0.1', async () => {
   target = await findTarget();
-  console.log(`Puente FreeLLMAPI → http://localhost:${PORT}/v1  (destino: ${target || 'no encontrado todavía'})`);
+  console.log(`Puente FreeLLMAPI -> http://127.0.0.1:${PORT}/v1  (destino: ${target || 'no encontrado todavía'})`);
   console.log(`Orígenes permitidos: ${ALLOWED_ORIGINS.join(', ')}`);
 });
